@@ -1,0 +1,18 @@
+add_item: inserts a new item into the item table. You will need to generate a new i_item_sk (e.g., MAX(i_item_sk) + 1). Use new_item.start_year to construct the i_rec_start_date (e.g., '2025-01-01').
+add_customer(new_customer): Inserts a new row into customer_address (parse the address string into its components), then inserts into customer. Split new_customer.name on the first space to get first/last name.
+edit_customer(original_customer_id, new_customer): Only update fields where new_customer.<field> is not None. If new_customer.name is not None, split it into first/last name before updating. If new_customer.address is not None, update the corresponding customer_address row.
+rent_item(item_id, customer_id): Inserts a row into rental with rental_date = today and due_date = today + 14 days.
+return_item(item_id, customer_id): Moves the rental record from rental to rental_history, setting return_date to today’s date.
+grant_extension(item_id, customer_id): Adds 14 days to the due_date of the active rental.
+waitlist_customer(item_id, customer_id) Inserts a new row with place_in_line = line_length + 1. Returns the new place_in_line.
+update_waitlist(item_id): Removes the row with place_in_line = 1 for that item, then decrements all remaining positions by 1.
+number_in_stock(item_id): Returns i_num_owned − (number of rows in rental with that item_id). Returns -1 if the item does not exist in the item table.
+place_in_line(item_id, customer_id): Returns the customer’s place_in_line from the waitlist table. Returns -1 if the customer is not on the waitlist for that item.
+line_length(item_id): Returns the number of rows in the waitlist for that item_id. Returns 0 if no waitlist exists.
+get_filtered_* functions
+Only apply a filter for an attribute if the corresponding field in filter_attributes is not None (or not -1 for integers/floats).
+When use_patterns=True, use SQL LIKE for string comparisons; otherwise use =
+Date and numeric range parameters that are None or -1 are not applied as filters.
+All range filters (date, price, year, place in line) are inclusive on both ends. - Return an empty list if no rows match.
+save_changes(): Commits all changes to the database (conn.commit()).
+close_connection(): Closes the cursor and the connection.
