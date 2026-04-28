@@ -135,14 +135,32 @@ def waitlist_customer(item_id: str = None, customer_id: str = None) -> int:
     """
     Returns the customer's new place in line.
     """
-    raise NotImplementedError("you must implement this function")
+    if item_id == None or customer_id ==None:
+        return -1
+    sql_init = "SELECT COUNT(*) FROM waitlist WHERE item_id = ?"
+    param = (item_id,)
+    cur.execute(sql_init, param)
+    final_position = (cur.fetchone()[0] or 0) +1
+    sql_add = "INSERT INTO waitlist (item_id, customer_id, place_in_line) VALUES (?,?,?)"
+    params = (item_id, customer_id, final_position)
+    cur.execute(sql_add, params)
+    return final_position
 
 def update_waitlist(item_id: str = None):
     """
     Removes person at position 1 and shifts everyone else down by 1.
     """
-    raise NotImplementedError("you must implement this function")
+    if item_id == None:
+        return
+    
+    #Delete first item in waitlist
+    sql_first = "DELETE FROM waitlist WHERE item_id = ? AND place_in_line = 1"
+    param = (item_id,)
+    cur.execute(sql_first,param)
 
+    #Update the rest of the waitlist
+    sql_update= "UPDATE waitlist SET place_in_line = place_in_line -1 WHERE item_id = ?"
+    cur.execute(sql_update, param)
 
 def return_item(item_id: str = None, customer_id: str = None):
     """
@@ -171,8 +189,16 @@ def grant_extension(item_id: str = None, customer_id: str = None):
     """
     Adds 14 days to the due_date.
     """
-    raise NotImplementedError("you must implement this function")
-
+    if item_id == None or customer_id==None:
+        return
+    sql_finder = "SELECT due_date FROM rental WHERE item_id = ? AND customer_id = ?"
+    params = (item_id, customer_id)
+    cur.execute(sql_finder, params)
+    d_date = date.fromisoformat(cur.fetchone()[0])
+    due_date_final = str(d_date + timedelta(days=14))
+    parameters = (due_date_final, item_id, customer_id)
+    sql_final = "UPDATE rental SET due_date = ? WHERE item_id = ? AND customer_id = ?"
+    cur.execute(sql_final, parameters)
 
 def get_filtered_items(filter_attributes: Item = None,
                        use_patterns: bool = False,
@@ -230,8 +256,26 @@ def number_in_stock(item_id: str = None) -> int:
     """
     Returns num_owned - active rentals. Returns -1 if item doesn't exist.
     """
-    raise NotImplementedError("you must implement this function")
-
+    if item_id == None:
+        return -1
+    sql_count_stock = "SELECT i_num_owned FROM item WHERE i_item_id = ?"
+    sql_count_rentals = "SELECT COUNT(*) FROM rental WHERE item_id = ?"
+    param = (item_id,)
+    #count the number in potential stock
+    cur.execute(sql_count_stock, param)
+    stock_count = cur.fetchone()
+    if  stock_count == None or stock_count[0] == 0:
+        return -1
+    in_stock = stock_count[0]
+    #count those in rentals
+    cur.execute(sql_count_rentals, param)
+    rental_count = cur.fetchone()
+    if  rental_count[0]== None:
+        return -1
+    num_rented = rental_count[0]
+    if in_stock - num_rented <0:
+        return -1
+    return in_stock - num_rented
 
 def place_in_line(item_id: str = None, customer_id: str = None) -> int:
     """
@@ -259,3 +303,4 @@ def close_connection():
     Closes the cursor and connection.
     """
     raise NotImplementedError("you must implement this function")
+
